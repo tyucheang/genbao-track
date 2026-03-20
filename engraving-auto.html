@@ -290,7 +290,7 @@
         }
         
         function translateText(text) {
-            // 简单的翻译字典
+            // 翻译字典
             const translations = {
                 // 指令性词汇
                 'do not': '不要',
@@ -345,10 +345,23 @@
                 'forever': '永远',
                 'always': '一直',
                 'lots of love': '很多爱',
-                'best wishes': '最好的祝福'
+                'best wishes': '最好的祝福',
+                'congratulations': '恭喜',
+                'welcome': '欢迎',
+                'little': '小',
+                'princess': '公主',
+                'angel': '天使',
+                'dear': '亲爱的',
+                'precious': '珍贵的',
+                'wonderful': '美好的',
+                'beautiful': '美丽的',
+                'amazing': '令人惊叹的',
+                'first': '第一',
+                'second': '第二',
+                'one': '一',
+                'two': '二'
             };
             
-            let translated = text;
             let hasWarning = false;
             let warningMsg = '';
             
@@ -366,12 +379,28 @@
                 warningMsg += '<br>⚠️ <strong>建议：此内容可能不是纯刻字，包含客户订单指令，请找陈总确认！</strong>';
             }
             
-            // 逐词翻译（简单替换）
-            let html = text;
-            for (let [en, zh] of Object.entries(translations)) {
-                const regex = new RegExp(`\\b${en}\\b`, 'gi');
-                html = html.replace(regex, match => `<span title="${zh}">${match}</span>`);
+            // 生成中文翻译文本（直接替换）
+            let translatedText = text.toLowerCase();
+            
+            // 先处理多词短语
+            const phrases = ['lots of love', 'best wishes', 'do not', 'don\'t'];
+            for (let phrase of phrases) {
+                if (translations[phrase]) {
+                    translatedText = translatedText.replace(new RegExp(phrase, 'gi'), translations[phrase]);
+                }
             }
+            
+            // 再处理单个词
+            for (let [en, zh] of Object.entries(translations)) {
+                if (!phrases.includes(en)) {
+                    const regex = new RegExp(`\\b${en}\\b`, 'gi');
+                    translatedText = translatedText.replace(regex, zh);
+                }
+            }
+            
+            // 格式化输出：原文 + 翻译
+            const html = `<div style="margin-bottom:10px;"><strong>原文：</strong> ${escapeHtml(text)}</div>
+                        <div><strong>翻译：</strong> ${translatedText}</div>`;
             
             return {
                 html: html,
