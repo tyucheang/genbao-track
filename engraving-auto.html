@@ -364,18 +364,21 @@
             
             // 检查是否包含指令性词汇（中英文客户指令）
             const warningWords = [
-                // 英文指令
+                // 英文指令 - 刻字相关
                 'do not', 'don\'t', 'no', 'without', 'remove', 'delete', 'change', 'modify', 'cancel',
                 'order', 'sku', 'model', 'style', 'option', 'requirements', 'attachment',
-                'back engraving', 'front engraving', 'engraving:', 'back:', 'front:',
-                'side engraving', 'top engraving', 'bottom engraving', 'row', 'bead', 'animal',
+                'back engraving', 'front engraving', 'side engraving', 'top engraving', 'bottom engraving',
+                'engraving:', 'back:', 'front:', 'side:', 'top:', 'bottom:',
+                'i want to engrave', 'please engrave', 'engrave this', 'engrave the following',
                 'color group', 'color', 'pattern', 'custom', 'personalization',
+                'row', 'bead', 'animal', 'number', 'letter',
                 
                 // 中文指令
                 '型号：', '款式：', '样式：', '定制要求：', '定制样式：',
                 '名字：', '选配附件：', '附件：', '动物：', '颜色组：',
                 '颜色组与木珠：', '背面刻字：', '右侧刻：', '顶部刻：',
-                '衣架颜色：', '不要', '取消', '更改', '修改'
+                '衣架颜色：', '不要', '取消', '更改', '修改',
+                '我想刻', '请刻', '刻字内容', '刻以下内容'
             ];
             
             for (let word of warningWords) {
