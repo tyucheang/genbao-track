@@ -115,6 +115,58 @@
             white-space: pre-wrap;
         }
         
+        .translation-box {
+            background: #fff8e1;
+            border-left: 4px solid #FFC107;
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-bottom: 15px;
+        }
+        
+        .translation-box h3 {
+            font-size: 14px;
+            color: #F57C00;
+            margin-bottom: 10px;
+        }
+        
+        .translation-content {
+            font-size: 15px;
+            line-height: 1.6;
+            color: #333;
+        }
+        
+        .warning-highlight {
+            background: #FFEBEE;
+            color: #C62828;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        
+        .alert-box {
+            background: #FFEBEE;
+            border: 2px solid #EF5350;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            display: none;
+        }
+        
+        .alert-box.show {
+            display: block;
+        }
+        
+        .alert-box h3 {
+            color: #C62828;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        
+        .alert-box p {
+            color: #555;
+            font-size: 14px;
+        }
+        
         .copy-btn {
             width: 100%;
             padding: 12px;
@@ -163,7 +215,17 @@
         <div class="result-section" id="result-section">
             <div class="result-title">📐 自动排版结果（10cm × 10cm）</div>
             
+            <div class="alert-box" id="alert-box">
+                <h3>⚠️ 发现异常内容</h3>
+                <p id="alert-text"></p>
+            </div>
+            
             <div class="engraving-preview" id="preview"></div>
+            
+            <div class="translation-box">
+                <h3>🔍 中文翻译（供设计师参考）：</h3>
+                <div class="translation-content" id="translation"></div>
+            </div>
             
             <div class="output-box">
                 <h3>📋 给设计师的分行结果（直接复制）：</h3>
@@ -174,12 +236,14 @@
         </div>
         
         <div class="tips">
-            <h3>💡 自动分行规则：</h3>
+            <h3>💡 自动分行规则 & 翻译功能：</h3>
             <ul>
                 <li>"Happy Birthday to" 模式在"to"后断行</li>
                 <li>固定短语（lots of love、Mommy and Daddy等）保持完整</li>
                 <li>句号、感叹号、问号后优先断行</li>
                 <li>每行控制在35-40字符</li>
+                <li><strong>🔍 自动翻译：</strong>鼠标悬停查看中文释义</li>
+                <li><strong>⚠️ 异常检测：</strong>发现"不要"、"订单号"等指令词汇会红字警告</li>
             </ul>
         </div>
     </div>
@@ -203,6 +267,19 @@
                 `<div class="engraving-line">${escapeHtml(line)}</div>`
             ).join('');
             
+            // 显示翻译
+            const translation = translateText(input);
+            document.getElementById('translation').innerHTML = translation.html;
+            
+            // 显示异常警告
+            const alertBox = document.getElementById('alert-box');
+            if (translation.hasWarning) {
+                document.getElementById('alert-text').innerHTML = translation.warningMsg;
+                alertBox.classList.add('show');
+            } else {
+                alertBox.classList.remove('show');
+            }
+            
             // 显示输出
             const output = document.getElementById('output');
             output.textContent = lines.map((line, i) => 
@@ -210,6 +287,97 @@
             ).join('\n');
             
             resultSection.classList.add('show');
+        }
+        
+        function translateText(text) {
+            // 简单的翻译字典
+            const translations = {
+                // 指令性词汇
+                'do not': '不要',
+                'don\'t': '不要',
+                'no': '不要/无',
+                'without': '没有',
+                'remove': '移除',
+                'delete': '删除',
+                'change': '更改',
+                'modify': '修改',
+                'cancel': '取消',
+                'order': '订单',
+                'sku': 'SKU',
+                'model': '型号',
+                'style': '款式',
+                'option': '选项',
+                'custom': '定制',
+                'requirements': '要求',
+                'attachment': '附件',
+                'bead': '木珠',
+                'number': '数字',
+                'animal': '动物',
+                'print': '彩印',
+                'color': '颜色',
+                'group': '组',
+                'row': '行',
+                'line': '行',
+                'back': '背面',
+                'front': '正面',
+                'engraving': '刻字',
+                'text': '文字',
+                'personalized': '个性化',
+                'message': '留言',
+                
+                // 常见刻字内容
+                'happy': '快乐',
+                'birthday': '生日',
+                'to': '给',
+                'our': '我们的',
+                'sweet': '亲爱的',
+                'baby': '宝贝',
+                'girl': '女孩',
+                'boy': '男孩',
+                'love': '爱',
+                'from': '来自',
+                'mommy': '妈妈',
+                'daddy': '爸爸',
+                'grandma': '奶奶',
+                'grandpa': '爷爷',
+                'auntie': '阿姨',
+                'uncle': '叔叔',
+                'forever': '永远',
+                'always': '一直',
+                'lots of love': '很多爱',
+                'best wishes': '最好的祝福'
+            };
+            
+            let translated = text;
+            let hasWarning = false;
+            let warningMsg = '';
+            
+            // 检查是否包含指令性词汇
+            const warningWords = ['do not', 'don\'t', 'no', 'without', 'remove', 'delete', 'change', 'modify', 'cancel', 'order', 'sku', 'model', 'style', 'option', 'requirements', 'attachment'];
+            
+            for (let word of warningWords) {
+                if (text.toLowerCase().includes(word)) {
+                    hasWarning = true;
+                    warningMsg += `发现可能包含<strong>客户指令</strong>的词汇：<span class="warning-highlight">${word}</span> → "${translations[word] || word}"<br>`;
+                }
+            }
+            
+            if (hasWarning) {
+                warningMsg += '<br>⚠️ <strong>建议：此内容可能不是纯刻字，包含客户订单指令，请找陈总确认！</strong>';
+            }
+            
+            // 逐词翻译（简单替换）
+            let html = text;
+            for (let [en, zh] of Object.entries(translations)) {
+                const regex = new RegExp(`\\b${en}\\b`, 'gi');
+                html = html.replace(regex, match => `<span title="${zh}">${match}</span>`);
+            }
+            
+            return {
+                html: html,
+                hasWarning: hasWarning,
+                warningMsg: warningMsg
+            };
         }
         
         function smartBreak(text) {
