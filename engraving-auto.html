@@ -363,7 +363,11 @@
             let warningMsg = '';
             
             // 检查是否包含指令性词汇
-            const warningWords = ['do not', 'don\'t', 'no', 'without', 'remove', 'delete', 'change', 'modify', 'cancel', 'order', 'sku', 'model', 'style', 'option', 'requirements', 'attachment'];
+            const warningWords = [
+                'do not', 'don\'t', 'no', 'without', 'remove', 'delete', 'change', 'modify', 'cancel',
+                'order', 'sku', 'model', 'style', 'option', 'requirements', 'attachment',
+                'back engraving', 'front engraving', 'engraving:', 'back:', 'front:'
+            ];
             
             for (let word of warningWords) {
                 if (text.toLowerCase().includes(word)) {
