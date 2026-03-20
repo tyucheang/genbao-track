@@ -424,117 +424,72 @@
             // 清理多余空格
             text = text.replace(/\s+/g, ' ').trim();
             
-            const result = [];
-            const words = text.split(' ');
-            let currentLine = '';
-            
-            // 目标每行长度（字符数）
-            const targetLength = 35;
-            const maxLength = 40;
-            
-            // 固定短语列表（不能拆分）- 必须保持完整
-            const fixedPhrases = [
+            // 第1步：识别必须在同一行的固定短语，用特殊标记保护
+            const protectedPhrases = [
                 'lots of love', 'happy birthday', 'happy anniversary',
-                'auntie', 'uncle', 'mommy', 'daddy', 'grandma', 'grandpa',
-                'tia', 'tio', 'love you', 'miss you', 'big sister', 'little sister',
-                'big brother', 'little brother', 'best wishes', 'with love'
+                'mommy and daddy', 'love you', 'miss you'
             ];
             
-            // 辅助函数：检查是否包含固定短语
-            function containsFixedPhrase(line) {
-                const lowerLine = line.toLowerCase();
-                return fixedPhrases.some(phrase => lowerLine.includes(phrase));
-            }
+            let protectedText = text;
+            const replacements = [];
+            protectedPhrases.forEach((phrase, idx) => {
+                const regex = new RegExp(phrase, 'gi');
+                protectedText = protectedText.replace(regex, match => {
+                    replacements.push({placeholder: `__PHRASE${idx}__`, original: match});
+                    return `__PHRASE${idx}__`;
+                });
+            });
             
-            // 辅助函数：检查拆分后是否会破坏固定短语
-            function wouldBreakFixedPhrase(currentLine, nextWord) {
-                const testLine = (currentLine + ' ' + nextWord).toLowerCase();
-                // 检查当前行结尾 + 下一个词开头是否构成固定短语的一部分
-                for (let phrase of fixedPhrases) {
-                    const phraseWords = phrase.split(' ');
-                    if (phraseWords.length < 2) continue;
+            // 第2步：识别 "Happy X Birthday to" 模式并在 "to" 后断行
+            // 将 "Happy 1st Birthday to" 视为一个整体标记
+            protectedText = protectedText.replace(/(Happy\s+\w+\s+Birthday\s+to)/gi, '$1|');
+            
+            // 第3步：在句子结束处断行（句号、感叹号、问号）
+            protectedText = protectedText.replace(/([.!?])\s+/g, '$1|');
+            
+            // 第4步：如果行太长，在逗号后断行
+            const parts = protectedText.split('|');
+            const result = [];
+            
+            parts.forEach(part => {
+                part = part.trim();
+                if (!part) return;
+                
+                // 如果这部分太长，需要进一步拆分
+                if (part.length > 40) {
+                    // 在逗号后拆分
+                    const subParts = part.split(/,\s+/);
+                    let currentPart = '';
                     
-                    // 检查是否有固定短语的词被拆分到两行
-                    for (let j = 0; j < phraseWords.length - 1; j++) {
-                        const currentWords = currentLine.toLowerCase().split(' ');
-                        const lastWord = currentWords[currentWords.length - 1];
+                    subParts.forEach((sub, idx) => {
+                        if (idx < subParts.length - 1) sub += ',';
                         
-                        // 如果当前行最后一个词和下一个词构成固定短语的一部分
-                        if (lastWord === phraseWords[j] && nextWord.toLowerCase() === phraseWords[j + 1]) {
-                            return true;
+                        if (!currentPart) {
+                            currentPart = sub;
+                        } else if ((currentPart + ' ' + sub).length <= 40) {
+                            currentPart += ' ' + sub;
+                        } else {
+                            result.push(currentPart.trim());
+                            currentPart = sub;
                         }
-                    }
-                }
-                return false;
-            }
-            
-            // 辅助函数：检查是否是 "Happy X Birthday to" 模式
-            function isHappyBirthdayToPattern(currentLine, word) {
-                if (!/^to$/i.test(word)) return false;
-                const pattern = /happy\s+\w+\s+birthday\s+to$/i;
-                const testLine = currentLine ? currentLine + ' ' + word : word;
-                return pattern.test(testLine);
-            }
-            
-            for (let i = 0; i < words.length; i++) {
-                const word = words[i];
-                const testLine = currentLine ? currentLine + ' ' + word : word;
-                const testLength = testLine.length;
-                
-                let shouldBreak = false;
-                
-                // 规则1: Happy X Birthday to 模式 - 在 "to" 后必须断行
-                if (isHappyBirthdayToPattern(currentLine, word)) {
-                    shouldBreak = true;
-                }
-                // 规则2: 句子结束（句号、感叹号、问号）且当前行已有一定长度
-                else if (/[.!?]$/.test(word) && currentLine.length > 15) {
-                    shouldBreak = true;
-                }
-                // 规则3: 检查是否会破坏固定短语
-                else if (i < words.length - 1 && wouldBreakFixedPhrase(testLine, words[i + 1])) {
-                    // 不在这里断行，保持固定短语完整
-                    shouldBreak = false;
-                }
-                // 规则4: 超过最大长度，必须断行
-                else if (testLength > maxLength) {
-                    // 尝试在最近的空格处断行，但不破坏固定短语
-                    if (!containsFixedPhrase(testLine)) {
-                        shouldBreak = true;
-                    }
-                }
-                // 规则5: 超过目标长度，且下一个词会超出太多
-                else if (testLength > targetLength && i < words.length - 1) {
-                    const nextWord = words[i + 1];
-                    const nextTestLength = testLength + 1 + nextWord.length;
+                    });
                     
-                    // 如果加上下一个词会超出最大长度，且不会破坏固定短语
-                    if (nextTestLength > maxLength && !wouldBreakFixedPhrase(testLine, nextWord)) {
-                        shouldBreak = true;
+                    if (currentPart) {
+                        result.push(currentPart.trim());
                     }
-                }
-                // 规则6: 逗号后，如果当前行已经较长
-                else if (/, $/.test(word) && testLength > targetLength - 5) {
-                    // 检查下一个词是否构成固定短语的一部分
-                    if (i < words.length - 1 && !wouldBreakFixedPhrase(testLine, words[i + 1])) {
-                        shouldBreak = true;
-                    }
-                }
-                
-                if (shouldBreak && currentLine) {
-                    result.push(currentLine);
-                    currentLine = word;
                 } else {
-                    currentLine = testLine;
+                    result.push(part);
                 }
-            }
+            });
             
-            // 添加最后一行
-            if (currentLine) {
-                result.push(currentLine);
-            }
-            
-            return result;
+            // 第5步：恢复固定短语
+            return result.map(line => {
+                let restored = line;
+                replacements.forEach(({placeholder, original}) => {
+                    restored = restored.replace(placeholder, original);
+                });
+                return restored;
+            }).filter(line => line.length > 0);
         }
         
         function renderPreview() {
