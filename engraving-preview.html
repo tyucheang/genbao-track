@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>刻字排版预览工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 24px;
+        }
+        
+        .input-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+        
+        .btn-primary {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #45a049;
+        }
+        
+        .btn-secondary {
+            background: #2196F3;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #1976D2;
+        }
+        
+        .btn-warning {
+            background: #FF9800;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #F57C00;
+        }
+        
+        .preview-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .preview-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .preview-title h2 {
+            font-size: 18px;
+            color: #333;
+        }
+        
+        .size-info {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .engraving-area {
+            width: 300px;
+            height: 300px;
+            border: 2px dashed #ccc;
+            margin: 0 auto 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: #fafafa;
+            position: relative;
+        }
+        
+        .engraving-area::before {
+            content: "10cm × 10cm";
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 12px;
+            color: #999;
+        }
+        
+        .engraving-content {
+            text-align: center;
+            width: 100%;
+            padding: 20px;
+        }
+        
+        .engraving-line {
+            margin: 5px 0;
+            cursor: pointer;
+            padding: 3px 10px;
+            border-radius: 4px;
+            transition: background 0.2s;
+            position: relative;
+        }
+        
+        .engraving-line:hover {
+            background: rgba(76, 175, 80, 0.1);
+        }
+        
+        .engraving-line.selected {
+            background: rgba(76, 175, 80, 0.2);
+            border-left: 3px solid #4CAF50;
+        }
+        
+        .engraving-line::after {
+            content: "↵";
+            position: absolute;
+            right: -20px;
+            color: #999;
+            font-size: 12px;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .engraving-line:hover::after {
+            opacity: 1;
+        }
+        
+        .adjust-controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .adjust-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .adjust-group label {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .adjust-group input[type="range"] {
+            width: 100px;
+        }
+        
+        .adjust-group span {
+            font-size: 14px;
+            color: #666;
+            min-width: 40px;
+        }
+        
+        .output-section {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        
+        .output-section h3 {
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 10px;
+        }
+        
+        .output-content {
+            background: white;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+            font-family: monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .tips {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e3f2fd;
+            border-radius: 8px;
+            border-left: 4px solid #2196F3;
+        }
+        
+        .tips h3 {
+            font-size: 14px;
+            color: #1976D2;
+            margin-bottom: 8px;
+        }
+        
+        .tips ul {
+            margin-left: 18px;
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .tips li {
+            margin: 5px 0;
+        }
+        
+        .warning {
+            margin-top: 15px;
+            padding: 12px;
+            background: #fff3e0;
+            border-radius: 8px;
+            border-left: 4px solid #FF9800;
+            display: none;
+        }
+        
+        .warning.show {
+            display: block;
+        }
+        
+        .warning h3 {
+            font-size: 14px;
+            color: #e65100;
+            margin-bottom: 5px;
+        }
+        
+        .warning p {
+            font-size: 13px;
+            color: #555;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            justify-content: center;
+        }
+        
+        @media (max-width: 600px) {
+            .engraving-area {
+                width: 250px;
+                height: 250px;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+            
+            button {
+                flex: 1;
+                min-width: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔤 刻字排版预览工具</h1>
+        
+        <div class="input-section">
+            <label for="input-text">输入刻字内容（英文）：</label>
+            <textarea id="input-text" placeholder="请粘贴客户提供的刻字内容...
+例如：Happy 1st Birthday to our sweet baby Scarlett"></textarea>
+            
+            <div class="controls">
+                <button class="btn-primary" onclick="autoFormat()">✨ 自动排版</button>
+                <button class="btn-secondary" onclick="resetText()">🔄 重置</button>
+                <button class="btn-warning" onclick="clearAll()">🗑️ 清空</button>
+            </div>
+        </div>
+        
+        <div class="preview-section">
+            <div class="preview-title">
+                <h2>📐 刻字效果预览</h2>
+                <span class="size-info">范围：10cm × 10cm | 居中显示</span>
+            </div>
+            
+            <div class="adjust-controls">
+                <div class="adjust-group">
+                    <label>字号：</label>
+                    <input type="range" id="font-size" min="12" max="48" value="24" oninput="updateFontSize(this.value)">
+                    <span id="font-size-value">24px</span>
+                </div>
+                <div class="adjust-group">
+                    <label>行距：</label>
+                    <input type="range" id="line-height" min="1" max="2" step="0.1" value="1.4" oninput="updateLineHeight(this.value)">
+                    <span id="line-height-value">1.4</span>
+                </div>
+            </div>
+            
+            <div class="engraving-area" id="engraving-area">
+                <div class="engraving-content" id="engraving-content">
+                    <p style="color: #999; font-size: 16px;">请输入刻字内容...</p>
+                </div>
+            </div>
+            
+            <div class="warning" id="warning-box">
+                <h3>⚠️ 提示</h3>
+                <p id="warning-text"></p>
+            </div>
+            
+            <div class="action-buttons">
+                <button class="btn-primary" onclick="copyResult()">📋 复制结果</button>
+                <button class="btn-secondary" onclick="downloadImage()">📷 保存图片</button>
+            </div>
+            
+            <div class="output-section">
+                <h3>📋 分行结果（给设计师）：</h3>
+                <div class="output-content" id="output-result">等待输入...</div>
+            </div>
+        </div>
+        
+        <div class="tips">
+            <h3>💡 使用说明：</h3>
+            <ul>
+                <li>粘贴客户提供的英文刻字内容</li>
+                <li>点击"自动排版"让AI智能分行</li>
+                <li>调整字号和行距，确保在虚线框内显示完整</li>
+                <li>点击预览中的某行，可在该行后添加换行</li>
+                <li>复制结果或截图发给设计师</li>
+            </ul>
+        </div>
+    </div>
+
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+    <script>
+        let lines = [];
+        let currentFontSize = 24;
+        let currentLineHeight = 1.4;
+        
+        function autoFormat() {
+            const input = document.getElementById('input-text').value.trim();
+            if (!input) {
+                alert('请输入刻字内容');
+                return;
+            }
+            
+            // 智能分行算法
+            lines = smartBreak(input);
+            renderPreview();
+            updateOutput();
+            checkWarning();
+        }
+        
+        function smartBreak(text) {
+            // 先解码HTML实体
+            text = text.replace(/&quot;/g, '"')
+                       .replace(/&#39;/g, "'")
+                       .replace(/&amp;/g, '&')
+                       .replace(/&lt;/g, '<')
+                       .replace(/&gt;/g, '>')
+                       .replace(/&#44;/g, ',')
+                       .replace(/&#33;/g, '!')
+                       .replace(/&#63;/g, '?')
+                       .replace(/&#46;/g, '.');
+            
+            // 清理多余空格
+            text = text.replace(/\s+/g, ' ').trim();
+            
+            const result = [];
+            const words = text.split(' ');
+            let currentLine = '';
+            
+            // 目标每行长度（字符数）
+            const targetLength = 35;
+            const maxLength = 40;
+            
+            // 固定短语列表（不能拆分）
+            const fixedPhrases = [
+                'lots of love', 'happy birthday', 'happy anniversary',
+                'auntie', 'uncle', 'mommy', 'daddy', 'grandma', 'grandpa',
+                'tia', 'tio', 'love you', 'miss you'
+            ];
+            
+            for (let i = 0; i < words.length; i++) {
+                const word = words[i];
+                const testLine = currentLine ? currentLine + ' ' + word : word;
+                
+                // 检查是否需要换行
+                let shouldBreak = false;
+                
+                // 检查是否包含句号、感叹号、问号（句子结束）
+                if (/[.!?]$/.test(word) && currentLine.length > 20) {
+                    shouldBreak = true;
+                }
+                // 检查是否包含逗号且当前行已较长
+                else if (/, $/.test(word) && testLine.length > targetLength) {
+                    shouldBreak = true;
+                }
+                // 检查是否超过最大长度
+                else if (testLine.length > maxLength) {
+                    shouldBreak = true;
+                }
+                // 检查下一个词是否会超出目标长度太多
+                else if (i < words.length - 1 && testLine.length > targetLength) {
+                    const nextWord = words[i + 1];
+                    if (testLine.length + nextWord.length + 1 > maxLength) {
+                        shouldBreak = true;
+                    }
+                }
+                // Happy X Birthday to 模式
+                else if (/^to$/i.test(word) && /happy\s+\w+\s+birthday\s+to$/i.test(testLine)) {
+                    shouldBreak = true;
+                }
+                
+                if (shouldBreak && currentLine) {
+                    result.push(currentLine);
+                    currentLine = word;
+                } else {
+                    currentLine = testLine;
+                }
+            }
+            
+            // 添加最后一行
+            if (currentLine) {
+                result.push(currentLine);
+            }
+            
+            return result;
+        }
+        
+        function renderPreview() {
+            const content = document.getElementById('engraving-content');
+            if (lines.length === 0) {
+                content.innerHTML = '<p style="color: #999; font-size: 16px;">请输入刻字内容...</p>';
+                return;
+            }
+            
+            content.innerHTML = lines.map((line, index) => 
+                `<div class="engraving-line" onclick="insertBreak(${index})" title="点击在此处换行">${escapeHtml(line)}</div>`
+            ).join('');
+            
+            updateStyle();
+        }
+        
+        function insertBreak(index) {
+            if (index >= lines.length - 1) return;
+            
+            const line = lines[index];
+            const words = line.split(' ');
+            
+            if (words.length <= 1) return;
+            
+            // 在行中间拆分
+            const mid = Math.ceil(words.length / 2);
+            lines[index] = words.slice(0, mid).join(' ');
+            lines.splice(index + 1, 0, words.slice(mid).join(' '));
+            
+            renderPreview();
+            updateOutput();
+        }
+        
+        function updateStyle() {
+            const content = document.getElementById('engraving-content');
+            content.style.fontSize = currentFontSize + 'px';
+            content.style.lineHeight = currentLineHeight;
+        }
+        
+        function updateFontSize(value) {
+            currentFontSize = parseInt(value);
+            document.getElementById('font-size-value').textContent = value + 'px';
+            updateStyle();
+        }
+        
+        function updateLineHeight(value) {
+            currentLineHeight = parseFloat(value);
+            document.getElementById('line-height-value').textContent = value;
+            updateStyle();
+        }
+        
+        function updateOutput() {
+            const output = document.getElementById('output-result');
+            if (lines.length === 0) {
+                output.textContent = '等待输入...';
+                return;
+            }
+            
+            output.innerHTML = lines.map((line, i) => 
+                `第${i + 1}行：${line}`
+            ).join('\n');
+        }
+        
+        function checkWarning() {
+            const warningBox = document.getElementById('warning-box');
+            const warningText = document.getElementById('warning-text');
+            const warnings = [];
+            
+            // 检查行数
+            if (lines.length > 6) {
+                warnings.push(`刻字内容较长（${lines.length}行），建议缩小字号`);
+            }
+            
+            // 检查超长行
+            const longLines = lines.filter(line => line.length > 40);
+            if (longLines.length > 0) {
+                warnings.push(`有${longLines.length}行超过40字符，可能影响显示效果`);
+            }
+            
+            // 检查标点位置
+            lines.forEach((line, i) => {
+                if (/^[,.!?;:]/.test(line)) {
+                    warnings.push(`第${i + 1}行以标点开头，建议调整`);
+                }
+            });
+            
+            if (warnings.length > 0) {
+                warningText.innerHTML = warnings.join('<br>');
+                warningBox.classList.add('show');
+            } else {
+                warningBox.classList.remove('show');
+            }
+        }
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function resetText() {
+            document.getElementById('input-text').value = '';
+            lines = [];
+            renderPreview();
+            updateOutput();
+            document.getElementById('warning-box').classList.remove('show');
+        }
+        
+        function clearAll() {
+            if (confirm('确定要清空所有内容吗？')) {
+                resetText();
+            }
+        }
+        
+        function copyResult() {
+            if (lines.length === 0) {
+                alert('请先输入刻字内容');
+                return;
+            }
+            
+            const result = lines.map((line, i) => `第${i + 1}行：${line}`).join('\n');
+            
+            navigator.clipboard.writeText(result).then(() => {
+                alert('已复制到剪贴板！');
+            }).catch(() => {
+                // 降级方案
+                const textarea = document.createElement('textarea');
+                textarea.value = result;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                alert('已复制到剪贴板！');
+            });
+        }
+        
+        function downloadImage() {
+            const area = document.getElementById('engraving-area');
+            
+            html2canvas(area, {
+                backgroundColor: '#fafafa',
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '刻字排版-' + new Date().getTime() + '.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            }).catch(err => {
+                alert('保存图片失败，请截图保存');
+                console.error(err);
+            });
+        }
+        
+        // 监听输入变化
+        document.getElementById('input-text').addEventListener('input', function() {
+            if (this.value.trim()) {
+                autoFormat();
+            }
+        });
+    </script>
+</body>
+</html>
