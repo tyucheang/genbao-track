@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>色号判断工具 - BP111名字拼图</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --girl: #ec4899;
+            --girl-light: #fce7f3;
+            --boy: #3b82f6;
+            --boy-light: #dbeafe;
+            --neutral: #6b7280;
+            --neutral-light: #f3f4f6;
+            --success: #10b981;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1f2937;
+            --text-light: #6b7280;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text);
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 24px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 16px;
+        }
+
+        .input-section {
+            margin-bottom: 20px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--text-light);
+            margin-bottom: 8px;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .name-input {
+            width: 100%;
+            padding: 16px 20px;
+            font-size: 1.1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            transition: all 0.3s ease;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .name-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .name-input::placeholder {
+            color: #9ca3af;
+        }
+
+        .analyze-btn {
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .analyze-btn:active {
+            transform: translateY(0);
+        }
+
+        .analyze-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-section {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 2px dashed #e5e7eb;
+        }
+
+        .result-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 4px;
+        }
+
+        .result-phonetic {
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .result-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .result-item {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-radius: 12px;
+            background: var(--neutral-light);
+            transition: all 0.3s ease;
+        }
+
+        .result-item.girl {
+            background: var(--girl-light);
+            border-left: 4px solid var(--girl);
+        }
+
+        .result-item.boy {
+            background: var(--boy-light);
+            border-left: 4px solid var(--boy);
+        }
+
+        .result-item.neutral {
+            background: var(--neutral-light);
+            border-left: 4px solid var(--neutral);
+        }
+
+        .result-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+
+        .result-item.girl .result-icon {
+            background: var(--girl);
+            color: white;
+        }
+
+        .result-item.boy .result-icon {
+            background: var(--boy);
+            color: white;
+        }
+
+        .result-item.neutral .result-icon {
+            background: var(--neutral);
+            color: white;
+        }
+
+        .result-content {
+            flex: 1;
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .result-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .result-value.girl { color: var(--girl); }
+        .result-value.boy { color: var(--boy); }
+        .result-value.neutral { color: var(--neutral); }
+
+        .confidence-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .confidence-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.6s ease;
+        }
+
+        .confidence-fill.girl { background: linear-gradient(90deg, var(--girl), #f472b6); }
+        .confidence-fill.boy { background: linear-gradient(90deg, var(--boy), #60a5fa); }
+        .confidence-fill.neutral { background: linear-gradient(90deg, var(--neutral), #9ca3af); }
+
+        .color-group-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .color-group-badge.group1 {
+            background: var(--girl-light);
+            color: var(--girl);
+        }
+
+        .color-group-badge.group2 {
+            background: var(--boy-light);
+            color: var(--boy);
+        }
+
+        .history-section {
+            margin-top: 20px;
+        }
+
+        .history-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text-light);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .history-tag {
+            padding: 8px 14px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .history-tag:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .history-tag .gender-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .history-tag .gender-dot.girl { background: var(--girl); }
+        .history-tag .gender-dot.boy { background: var(--boy); }
+        .history-tag .gender-dot.neutral { background: var(--neutral); }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            opacity: 0.7;
+            font-size: 0.8rem;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .loading.show {
+            display: block;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e5e7eb;
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 16px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tips {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            font-size: 0.85rem;
+            color: #92400e;
+        }
+
+        .tips strong {
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 12px;
+            }
+            
+            .card {
+                padding: 20px;
+                border-radius: 16px;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .result-name {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 色号判断工具</h1>
+            <p>BP111 名字拼图 - 智能色组推荐</p>
+        </header>
+
+        <div class="card">
+            <div class="input-section">
+                <label class="input-label">输入名字（英文/外文）</label>
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        class="name-input" 
+                        id="nameInput" 
+                        placeholder="例如：Emma, Liam, Olivia..."
+                        autocomplete="off"
+                    >
+                </div>
+            </div>
+
+            <button class="analyze-btn" id="analyzeBtn" onclick="analyzeName()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                </svg>
+                判断色组
+            </button>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>正在分析名字...</p>
+            </div>
+
+            <div class="result-section" id="resultSection">
+                <div class="result-header">
+                    <div class="result-name" id="resultName">-</div>
+                    <div class="result-phonetic" id="resultPhonetic"></div>
+                </div>
+
+                <div class="result-grid">
+                    <div class="result-item" id="genderItem">
+                        <div class="result-icon" id="genderIcon">👤</div>
+                        <div class="result-content">
+                            <div class="result-label">性别判断</div>
+                            <div class="result-value" id="genderValue">-</div>
+                            <div class="confidence-bar">
+                                <div class="confidence-fill" id="confidenceBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="result-item" id="colorItem">
+                        <div class="result-icon">🎨</div>
+                        <div class="result-content">
+                            <div class="result-label">推荐色组</div>
+                            <div class="result-value">
+                                <span class="color-group-badge" id="colorGroupBadge">
+                                    -
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tips" id="tips">
+                    <strong>💡 提示</strong>
+                    <span id="tipsText">-</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card history-section" id="historySection" style="display: none;">
+            <div class="history-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 3v5h5"></path>
+                    <path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path>
+                </svg>
+                最近查询
+            </div>
+            <div class="history-list" id="historyList"></div>
+        </div>
+
+        <footer class="footer">
+            <p>© 2026 BP111 名字拼图 | 智能色号判断系统</p>
+        </footer>
+    </div>
+
+    <script>
+        // 名字性别数据库（来自 name_gender_db.md）
+        const nameDatabase = {
+            // A
+            'Alida': { gender: 'girl', confidence: 85, note: '拉丁起源，"小翼"之意' },
+            'Amilien': { gender: 'girl', confidence: 85, note: '现代变体，Emily/Amelia风格' },
+            'Avery': { gender: 'girl', confidence: 70, note: '可男可女，偏女性使用' },
+            
+            // B
+            'Brooks': { gender: 'boy', confidence: 100, note: '英国起源，"小溪"之意，男孩名' },
+            
+            // C
+            'Cara': { gender: 'girl', confidence: 95, note: '意大利语"亲爱的"' },
+            'Caroline': { gender: 'girl', confidence: 95, note: '经典女孩名，Charles的女性形式' },
+            'Charlotte': { gender: 'girl', confidence: 100, note: '经典女孩名，源自法国' },
+            'Cora': { gender: 'girl', confidence: 100, note: '经典女孩名，源自希腊语"少女"' },
+            
+            // D
+            'Daryl': { gender: 'boy', confidence: 100, note: '男孩名，"亲爱的"之意' },
+            'Donovan': { gender: 'boy', confidence: 100, note: '爱尔兰起源，"黑战士"' },
+            
+            // E
+            'Emmaline': { gender: 'girl', confidence: 100, note: 'Emma的变体，经典女孩名' },
+            'Emilio': { gender: 'boy', confidence: 100, note: '西班牙语起源，Emil的男性形式' },
+            
+            // G
+            'Gianna': { gender: 'girl', confidence: 100, note: '意大利语，Jane的变体，上帝是仁慈的' },
+            'Grace': { gender: 'girl', confidence: 100, note: '经典英文名，优雅之意' },
+            
+            // H
+            'Harper': { gender: 'girl', confidence: 90, note: '中性偏女，也可男孩用' },
+            'Hailey': { gender: 'girl', confidence: 80, note: '中性偏女，Hayley的变体' },
+            'Hayes': { gender: 'boy', confidence: 85, note: '英国姓氏名，"篱笆围场"之意，中性偏男' },
+            'Hazel': { gender: 'girl', confidence: 90, note: '源自榛树，经典女孩名' },
+            
+            // I
+            'Indie': { gender: 'girl', confidence: 75, note: 'India/Indigo的昵称，中性偏女' },
+            
+            // J
+            'Josephine': { gender: 'girl', confidence: 100, note: '经典女孩名，Joseph的女性形式' },
+            'June': { gender: 'girl', confidence: 95, note: '月份名，经典女孩名' },
+            
+            // K
+            'Kaia': { gender: 'girl', confidence: 85, note: '斯堪的纳维亚起源，"地球"之意' },
+            'Kelly': { gender: 'girl', confidence: 80, note: '爱尔兰起源，传统男性名现多用于女性' },
+            'Korra': { gender: 'girl', confidence: 75, note: 'Cora的变体，现代拼写' },
+            'Kinsley': { gender: 'girl', confidence: 90, note: '现代流行名，中性偏女' },
+            'Knox': { gender: 'boy', confidence: 90, note: '苏格兰姓氏名，中性偏男' },
+            
+            // L
+            'Lennon': { gender: 'girl', confidence: 90, note: '中性偏女，也可男孩用（此处按粉色要求判为女孩）' },
+            'Leo': { gender: 'boy', confidence: 100, note: '拉丁语"狮子"，经典男孩名' },
+            'Lexy Jean': { gender: 'girl', confidence: 100, note: 'Lexy是Alexis昵称，Jean为中间名，女孩名' },
+            'Lily': { gender: 'girl', confidence: 100, note: '经典女孩名，百合花之意' },
+            'Lillian': { gender: 'girl', confidence: 95, note: 'Lily的变体，经典女孩名' },
+            
+            // N
+            'Naveya': { gender: 'girl', confidence: 85, note: 'Nava/Navya变体，现代名' },
+            
+            // O
+            'Oaklynn': { gender: 'girl', confidence: 100, note: '现代组合名（Oak+Lynn），女孩名' },
+            'Ophelia': { gender: 'girl', confidence: 95, note: '希腊起源，莎士比亚角色名' },
+            
+            // P
+            'Percival': { gender: 'boy', confidence: 100, note: '亚瑟王骑士，纯男孩名' },
+            
+            // Q
+            'Quinnie': { gender: 'girl', confidence: 90, note: 'Quinn的昵称，中性偏女' },
+            
+            // R
+            'Raelynn': { gender: 'girl', confidence: 100, note: '现代组合名（Rae+Lynn）' },
+            'Raven': { gender: 'neutral', confidence: 50, note: '中性名，可男可女，建议色组2' },
+            'Reice': { gender: 'girl', confidence: 70, note: 'Reese/Rhys的变体，中性偏女' },
+            'River': { gender: 'girl', confidence: 60, note: '自然名，中性偏女' },
+            
+            // S
+            'Serena': { gender: 'girl', confidence: 95, note: '拉丁语"宁静"，经典女孩名' },
+            'Symara': { gender: 'girl', confidence: 85, note: '现代独特名，Samara变体' },
+            
+            // T
+            'Tate': { gender: 'boy', confidence: 100, note: '英国起源，"愉快"之意，男孩名' },
+            'Tessa': { gender: 'girl', confidence: 95, note: 'Theresa的昵称，经典女孩名' },
+            
+            // Z
+            'Zara': { gender: 'girl', confidence: 90, note: '阿拉伯起源，"公主"之意' }
+        };
+
+        // 常见名字后缀规则（用于未知名字的判断）
+        const suffixRules = {
+            // 女孩名特征
+            girl: {
+                suffixes: ['a', 'e', 'i', 'ie', 'ee', 'y', 'ette', 'elle', 'ella', 'anna', 'beth', 'lynn', 'leigh', 'sie', 'cie', 'die'],
+                prefixes: ['emma', 'anna', 'ella', 'lily', 'rose', 'mary', 'grace', 'claire'],
+                common: ['emma', 'olivia', 'ava', 'isabella', 'sophia', 'mia', 'charlotte', 'amelia', 'harper', 'evelyn', 'abigail', 'emily', 'elizabeth', 'avery', 'sofia', 'ella', 'madison', 'scarlett', 'victoria', 'aria']
+            },
+            // 男孩名特征
+            boy: {
+                suffixes: ['o', 'n', 'r', 's', 'an', 'en', 'in', 'on', 'un', 'er', 'or', 'ar', 'son', 'den', 'ton', 'ven', 'iel', 'uel', 'iam', 'iam'],
+                prefixes: ['max', 'dex', 'jax', 'ben', 'dan', 'sam', 'tom', 'rob', 'jon', 'leo', 'theo'],
+                common: ['liam', 'noah', 'william', 'james', 'oliver', 'benjamin', 'elijah', 'lucas', 'mason', 'ethan', 'alexander', 'henry', 'jacob', 'michael', 'daniel', 'logan', 'jackson', 'sebastian', 'jack', 'aiden']
+            }
+        };
+
+        // 历史记录
+        let searchHistory = JSON.parse(localStorage.getItem('colorPickerHistory') || '[]');
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            renderHistory();
+            document.getElementById('nameInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') analyzeName();
+            });
+        });
+
+        // 分析名字
+        async function analyzeName() {
+            const input = document.getElementById('nameInput');
+            const name = input.value.trim();
+            
+            if (!name) {
+                input.focus();
+                input.style.borderColor = '#ef4444';
+                setTimeout(() => input.style.borderColor = '', 300);
+                return;
+            }
+
+            const normalizedName = normalizeName(name);
+            
+            // 显示加载
+            document.getElementById('loading').classList.add('show');
+            document.getElementById('resultSection').classList.remove('show');
+            document.getElementById('analyzeBtn').disabled = true;
+
+            // 模拟分析延迟
+            await new Promise(resolve => setTimeout(resolve, 600));
+
+            // 查询数据库或进行判断
+            const result = queryDatabase(normalizedName);
+
+            // 显示结果
+            displayResult(normalizedName, result);
+            
+            // 保存历史
+            addToHistory(normalizedName, result);
+
+            // 隐藏加载
+            document.getElementById('loading').classList.remove('show');
+            document.getElementById('resultSection').classList.add('show');
+            document.getElementById('analyzeBtn').disabled = false;
+        }
+
+        // 规范化名字
+        function normalizeName(name) {
+            return name.trim().replace(/\s+/g, ' ').toLowerCase()
+                .split(' ')
+                .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+                .join(' ');
+        }
+
+        // 查询数据库
+        function queryDatabase(name) {
+            // 直接匹配
+            if (nameDatabase[name]) {
+                return { ...nameDatabase[name], source: 'database' };
+            }
+
+            // 尝试单名匹配（如果是复合名字）
+            const parts = name.split(' ');
+            for (const part of parts) {
+                if (nameDatabase[part]) {
+                    return { ...nameDatabase[part], source: 'database', matchedName: part };
+                }
+            }
+
+            // 使用规则判断
+            return analyzeByRules(name);
+        }
+
+        // 规则分析
+        function analyzeByRules(name) {
+            const lowerName = name.toLowerCase();
+            const firstName = lowerName.split(' ')[0];
+            
+            let girlScore = 0;
+            let boyScore = 0;
+
+            // 检查后缀
+            const girlSuffixes = suffixRules.girl.suffixes;
+            const boySuffixes = suffixRules.boy.suffixes;
+
+            for (const suffix of girlSuffixes) {
+                if (firstName.endsWith(suffix)) girlScore += 2;
+            }
+            for (const suffix of boySuffixes) {
+                if (firstName.endsWith(suffix)) boyScore += 2;
+            }
+
+            // 检查常见名字
+            if (suffixRules.girl.common.includes(firstName)) {
+                girlScore += 5;
+            }
+            if (suffixRules.boy.common.includes(firstName)) {
+                boyScore += 5;
+            }
+
+            // 特殊规则
+            if (firstName.endsWith('a') && !firstName.endsWith('va')) girlScore += 1;
+            if (firstName.endsWith('o') || firstName.endsWith('n')) boyScore += 1;
+
+            // 根据分数判断
+            let gender, confidence;
+            if (girlScore > boyScore + 2) {
+                gender = 'girl';
+                confidence = Math.min(60 + girlScore * 5, 85);
+            } else if (boyScore > girlScore + 2) {
+                gender = 'boy';
+                confidence = Math.min(60 + boyScore * 5, 85);
+            } else {
+                gender = 'neutral';
+                confidence = 50;
+            }
+
+            return {
+                gender,
+                confidence,
+                note: '基于名字特征分析（非数据库记录）',
+                source: 'analysis'
+            };
+        }
+
+        // 显示结果
+        function displayResult(name, result) {
+            const genderMap = {
+                'girl': { text: '女孩名', icon: '👧', class: 'girl' },
+                'boy': { text: '男孩名', icon: '👦', class: 'boy' },
+                'neutral': { text: '中性/不确定', icon: '👤', class: 'neutral' }
+            };
+
+            const genderInfo = genderMap[result.gender];
+            const colorGroup = result.gender === 'girl' ? 1 : 2;
+            const colorGroupName = colorGroup === 1 ? '色组1 - 粉色系' : '色组2 - 实色字母';
+
+            // 设置名字
+            document.getElementById('resultName').textContent = name;
+            document.getElementById('resultPhonetic').textContent = result.matchedName 
+                ? `匹配到: ${result.matchedName}` 
+                : (result.source === 'database' ? '来自名字数据库' : '基于规则分析');
+
+            // 设置性别
+            const genderItem = document.getElementById('genderItem');
+            genderItem.className = `result-item ${genderInfo.class}`;
+            document.getElementById('genderIcon').textContent = genderInfo.icon;
+            document.getElementById('genderValue').textContent = `${genderInfo.text} (${result.confidence}%)`;
+            document.getElementById('genderValue').className = `result-value ${genderInfo.class}`;
+            
+            // 设置置信度条
+            const confidenceBar = document.getElementById('confidenceBar');
+            confidenceBar.className = `confidence-fill ${genderInfo.class}`;
+            setTimeout(() => confidenceBar.style.width = `${result.confidence}%`, 100);
+
+            // 设置色组
+            const colorItem = document.getElementById('colorItem');
+            colorItem.className = `result-item ${genderInfo.class}`;
+            const badge = document.getElementById('colorGroupBadge');
+            badge.className = `color-group-badge group${colorGroup}`;
+            badge.innerHTML = colorGroup === 1 
+                ? '🌸 ' + colorGroupName 
+                : '🔷 ' + colorGroupName;
+
+            // 设置提示
+            const tipsText = document.getElementById('tipsText');
+            if (result.note) {
+                tipsText.textContent = result.note;
+            } else {
+                tipsText.textContent = result.gender === 'girl' 
+                    ? '建议使用粉色系（色组1），营造甜美可爱的感觉' 
+                    : '建议使用实色字母（色组2），适合男孩或中性风格';
+            }
+        }
+
+        // 添加到历史
+        function addToHistory(name, result) {
+            // 去重并添加到开头
+            searchHistory = searchHistory.filter(item => item.name !== name);
+            searchHistory.unshift({
+                name,
+                gender: result.gender,
+                timestamp: Date.now()
+            });
+            // 最多保留10个
+            searchHistory = searchHistory.slice(0, 10);
+            localStorage.setItem('colorPickerHistory', JSON.stringify(searchHistory));
+            renderHistory();
+        }
+
+        // 渲染历史
+        function renderHistory() {
+            const historySection = document.getElementById('historySection');
+            const historyList = document.getElementById('historyList');
+            
+            if (searchHistory.length === 0) {
+                historySection.style.display = 'none';
+                return;
+            }
+
+            historySection.style.display = 'block';
+            historyList.innerHTML = searchHistory.map(item => `
+                <div class="history-tag" onclick="quickSearch('${item.name}')">
+                    <span class="gender-dot ${item.gender}"></span>
+                    ${item.name}
+                </div>
+            `).join('');
+        }
+
+        // 快速搜索
+        function quickSearch(name) {
+            document.getElementById('nameInput').value = name;
+            analyzeName();
+        }
+    </script>
+</body>
+</html>
