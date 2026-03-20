@@ -222,8 +222,8 @@
             
             <div class="engraving-preview" id="preview"></div>
             
-            <div class="translation-box">
-                <h3>🔍 中文翻译（供设计师参考）：</h3>
+            <div class="translation-box" id="translation-box" style="display:none;">
+                <h3>🔍 内容分析：</h3>
                 <div class="translation-content" id="translation"></div>
             </div>
             
@@ -267,17 +267,14 @@
                 `<div class="engraving-line">${escapeHtml(line)}</div>`
             ).join('');
             
-            // 显示翻译
-            const translation = translateText(input);
-            document.getElementById('translation').innerHTML = translation.html;
-            
-            // 显示异常警告
-            const alertBox = document.getElementById('alert-box');
+            // 显示异常检测
+            const translation = checkForIssues(input);
+            const translationBox = document.getElementById('translation-box');
             if (translation.hasWarning) {
-                document.getElementById('alert-text').innerHTML = translation.warningMsg;
-                alertBox.classList.add('show');
+                document.getElementById('translation').innerHTML = translation.warningMsg;
+                translationBox.style.display = 'block';
             } else {
-                alertBox.classList.remove('show');
+                translationBox.style.display = 'none';
             }
             
             // 显示输出
